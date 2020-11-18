@@ -2,7 +2,7 @@
 {
     public class SearchResult
     {
-        public string Word { get; set; }
+        public char[] Word { get; set; }
         public double LevenshteinDistance { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace GraphSearch.Models
@@ -12,7 +13,6 @@ namespace GraphSearch.Models
     {
         private string _filePath;
         private char[][] _books;
-
 
         public SearchCluster(string filePath)
         {
@@ -29,14 +29,23 @@ namespace GraphSearch.Models
             char[] inputCharacters = input.ToCharArray();
             ConcurrentBag<SearchResult> results = new ConcurrentBag<SearchResult>();
 
-            Parallel.ForEach(_books, (book) => {
-                if (PassesComparisonCriteria(inputCharacters, book, lengthTollerancePercentage))
+            int processorChunkSize = _books.Length / Environment.ProcessorCount;
+
+            /// TODO: Last elements are sometimes skipped.
+            Parallel.For(0, Environment.ProcessorCount, i =>
+            {
+                for (int j = i * processorChunkSize; j < (i + 1) * processorChunkSize; j++)
                 {
-                    results.Add(new SearchResult
+                    char[] book = _books[j];
+
+                    if (PassesComparisonCriteria(inputCharacters, book, lengthTollerancePercentage))
                     {
-                        Word = new string(book),
-                        LevenshteinDistance = GetLevenshteinDistance(book, inputCharacters)
-                    });
+                        results.Add(new SearchResult
+                        {
+                            Word = book,
+                            LevenshteinDistance = GetLevenshteinDistance(book, inputCharacters)
+                        });
+                    }
                 }
             });
 

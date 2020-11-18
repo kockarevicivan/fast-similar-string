@@ -6,7 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="External\levenshtein.c" />
+    <None Remove="Models\levenshtein.c" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.Collections" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="External\" />
   </ItemGroup>
 
 </Project>
