@@ -12,12 +12,21 @@ namespace GraphSearch.Models
     public class SearchCluster
     {
         private string _filePath;
-        private char[][] _books;
+        private ClusterInsert[] _books;
+        private const string _alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
 
         public SearchCluster(string filePath)
         {
             _filePath = filePath;
-            _books = File.ReadAllLines(filePath).Select(e => e.ToCharArray()).ToArray();
+            _books = File.ReadAllLines(filePath).Select(e => {
+                char[] bookAsCharArray = e.ToCharArray();
+
+                return new ClusterInsert
+                {
+                    Word = bookAsCharArray,
+                    Index = GetVector(bookAsCharArray)
+                };
+            }).ToArray();
         }
 
 
@@ -27,18 +36,20 @@ namespace GraphSearch.Models
             double lengthTollerancePercentage = 100)
         {
             char[] inputCharacters = input.ToCharArray();
+            int[] inputVector = GetVector(inputCharacters);
+
             ConcurrentBag<SearchResult> results = new ConcurrentBag<SearchResult>();
 
             int processorChunkSize = _books.Length / Environment.ProcessorCount;
 
             /// TODO: Last elements are sometimes skipped.
-            Parallel.For(0, Environment.ProcessorCount, i =>
-            {
+            //Parallel.For(0, Environment.ProcessorCount, i => {
+                for(int i = 0; i < Environment.ProcessorCount; i++)
                 for (int j = i * processorChunkSize; j < (i + 1) * processorChunkSize; j++)
                 {
-                    char[] book = _books[j];
+                    char[] book = _books[j].Word;
 
-                    if (PassesComparisonCriteria(inputCharacters, book, lengthTollerancePercentage))
+                    if (PassesComparisonCriteria(inputCharacters, book, lengthTollerancePercentage, inputVector))
                     {
                         results.Add(new SearchResult
                         {
@@ -47,7 +58,7 @@ namespace GraphSearch.Models
                         });
                     }
                 }
-            });
+            //});
 
             return results
                 .OrderBy(e => e.LevenshteinDistance)
@@ -55,8 +66,27 @@ namespace GraphSearch.Models
                 .ToList();
         }
 
+        private int GetVectorDistance(int[] vector1, int[] vector2)
+        {
+            int result = 0;
 
-        private bool PassesComparisonCriteria(char[] input, char[] reference, double toleratedLengthDifferencePercentage)
+            for (int i = 0; i < _alphabet.Length; i++)
+                result += Math.Abs(vector1[i] - vector2[i]);
+
+            return result;
+        }
+
+        private int[] GetVector(char[] input)
+        {
+            int[] result = new int[_alphabet.Length];
+
+            for (int i = 0; i < _alphabet.Length; i++)
+                result[i] = input.Count(c => c == _alphabet[i]);
+
+            return result;
+        }
+
+        private bool PassesComparisonCriteria(char[] input, char[] reference, double toleratedLengthDifferencePercentage, int[] inputVector)
         {
             // Calculate difference in lengths of input and compared string and check if under allowed limit percentage.
             double lengthDifferencePercentage = NumberHelper.ToPercents(
@@ -65,6 +95,11 @@ namespace GraphSearch.Models
             );
 
             if (lengthDifferencePercentage > toleratedLengthDifferencePercentage)
+                return false;
+
+            int[] referenceVector = GetVector(reference);
+
+            if (GetVectorDistance(inputVector, referenceVector) > reference.Length)
                 return false;
 
             return true;

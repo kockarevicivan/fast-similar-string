@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,17 +15,6 @@ namespace GraphSearch
 
         static void Main(string[] args)
         {
-            //string[] lines = File.ReadAllLines("words.txt");
-
-            //StringBuilder sb = new StringBuilder();
-
-            //for (int number = 1; number < 4; number++)
-            //    for (int i = 0; i < lines.Length - 3; i++)
-            //        sb.AppendLine(lines[i] + " " + lines[i + 1] + " " + lines[i + 2] + " " + number);
-
-
-            //File.AppendAllText("books.txt", sb.ToString());
-
             // Loading
             _stopwatch.Start();
 
@@ -33,7 +23,6 @@ namespace GraphSearch
             _stopwatch.Stop();
 
             Console.WriteLine("Insertion time in seconds: " + ((double)_stopwatch.ElapsedTicks / 10000000));
-
 
 
             // Searching            
